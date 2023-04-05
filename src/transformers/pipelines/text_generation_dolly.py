@@ -57,7 +57,7 @@ class TextGenerationDollyPipeline(Pipeline):
       response_key_token_id = self.tokenizer.encode("### Response:")[0]
       end_key_token_id = self.tokenizer.encode("### End")[0]
 
-      return self.model.generate(input_ids, pad_token_id=tokenizer.pad_token_id, eos_token_id=end_key_token_id,
+      return self.model.generate(input_ids, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=end_key_token_id,
                                   do_sample=do_sample, max_new_tokens=max_new_tokens, top_p=top_p, top_k=top_k, **kwargs)[0].cpu()
 
     def postprocess(self, gen_tokens, do_sample: bool = True, max_new_tokens: int = 256, top_p: float = 0.92, top_k: int = 0, **kwargs):
@@ -75,6 +75,6 @@ class TextGenerationDollyPipeline(Pipeline):
           if len(end_positions) > 0:
               end_pos = end_positions[0]
 
-          return tokenizer.decode(gen_tokens[response_pos + 1 : end_pos], ).strip()
+          return self.tokenizer.decode(gen_tokens[response_pos + 1 : end_pos], ).strip()
       return None
        
