@@ -104,8 +104,8 @@ class TextGenerationDollyPipeline(Pipeline):
     ):
 
         custom_default_generate_args = {
-            "pad_token_id": tokenizer.pad_token_id, 
-            "eos_token_id": tokenizer.encode("### End")[0],
+            "pad_token_id": self.tokenizer.pad_token_id, 
+            "eos_token_id": self.tokenizer.encode("### End")[0],
             "do_sample": True, 
             "max_new_tokens": 256, 
             "top_p": 0.92, 
