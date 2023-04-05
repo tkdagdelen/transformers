@@ -74,7 +74,7 @@ class TextGenerationDollyPipeline(Pipeline):
           end_positions = np.where(gen_tokens == end_key_token_id)[0]
           if len(end_positions) > 0:
               end_pos = end_positions[0]
-
-          return self.tokenizer.decode(gen_tokens[response_pos + 1 : end_pos], ).strip()
+          result = {"generated_text": self.tokenizer.decode(gen_tokens[response_pos + 1 : end_pos], ).strip()}
+          return [result]
       return None
        
