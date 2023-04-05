@@ -342,13 +342,3 @@ class TextGenerationDollyPipeline(Pipeline):
             records.append(record)
         return records
 
-
-
-PIPELINE_REGISTRY.register_pipeline(
-    "text-generation-dolly",
-    pipeline_class=TextGenerationDollyPipeline,
-    pt_model=AutoModelForCausalLM,
-    tf_model=TFAutoModelForCausalLM,
-    default={"pt": ("databricks/dolly-v1-6b","dff64dd")},
-    type="text"
-)
