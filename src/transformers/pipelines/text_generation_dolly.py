@@ -48,7 +48,7 @@ class TextGenerationDollyPipeline(Pipeline):
 
 ### Response:
 """
-        input_ids = tokenizer(PROMPT_FORMAT.format(instruction=instruction), return_tensors="pt").input_ids.to("cuda")
+        input_ids = self.tokenizer(PROMPT_FORMAT.format(instruction=instruction), return_tensors="pt").input_ids.to("cuda")
         return input_ids
 
     def _forward(self, input_ids, 
