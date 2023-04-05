@@ -284,6 +284,14 @@ SUPPORTED_TASKS = {
         "default": {"model": {"pt": ("gpt2", "6c0e608"), "tf": ("gpt2", "6c0e608")}},
         "type": "text",
     },
+    "text-generation-dolly":{
+        "impl": TextGenerationDollyPipeline,
+        "pt": (AutoModelForCausalLM,) if is_torch_available() else (),
+        "tf": (TFAutoModelForCausalLM,) if is_tf_available() else (),
+        "default": {
+            "model": {"pt": ('databricks/dolly-v1-6b', 'dff64dd')}},
+        "type": "text",
+    },
     "zero-shot-classification": {
         "impl": ZeroShotClassificationPipeline,
         "tf": (TFAutoModelForSequenceClassification,) if is_tf_available() else (),
