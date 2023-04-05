@@ -99,7 +99,7 @@ class TextGenerationDollyPipeline(Pipeline):
         prefix=None,
         handle_long_generation=None,
         stop_sequence=None,
-        device=None
+        device=None,
         **generate_kwargs,
     ):
 
