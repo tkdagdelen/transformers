@@ -1,10 +1,11 @@
+from collections.abc import Sequence
 import enum
 import warnings
 import numpy as np
 
-from .. import MODEL_FOR_CAUSAL_LM_MAPPING, TF_MODEL_FOR_CAUSAL_LM_MAPPING
-from ..utils import add_end_docstrings, is_tf_available
-from .base import PIPELINE_INIT_ARGS, Pipeline
+from transformers import MODEL_FOR_CAUSAL_LM_MAPPING, TF_MODEL_FOR_CAUSAL_LM_MAPPING
+from transformers.utils import add_end_docstrings, is_tf_available
+from transformers.pipelines.base import PIPELINE_INIT_ARGS, Pipeline
 
 
 if is_tf_available():
@@ -18,7 +19,7 @@ class ReturnType(enum.Enum):
 
 
 @add_end_docstrings(PIPELINE_INIT_ARGS)
-class TextGenerationDollyPipeline(Pipeline):
+class TextGenerationDollyPipeline2(Pipeline):
     """
     Language generation pipeline using any `ModelWithLMHead`. This pipeline predicts the words that will follow a
     specified text prompt.
@@ -108,7 +109,6 @@ class TextGenerationDollyPipeline(Pipeline):
             "max_new_tokens": 256, 
             "top_p": 0.92, 
             "top_k": 0,
-            "return_tensors":"pt",
         }
         
         # set default generate args if necessary
@@ -155,12 +155,12 @@ class TextGenerationDollyPipeline(Pipeline):
         forward_params = generate_kwargs
 
         postprocess_params = {}
-        if return_full_text is not None and return_type is None:
-            if return_text is not None:
-                raise ValueError("`return_text` is mutually exclusive with `return_full_text`")
+        if return_text is not None and return_type is None:
+            if return_full_text is not None:
+                raise ValueError("`return_full_text` is mutually exclusive with `return_text`")
             if return_tensors is not None:
-                raise ValueError("`return_full_text` is mutually exclusive with `return_tensors`")
-            return_type = ReturnType.FULL_TEXT if return_full_text else ReturnType.NEW_TEXT
+                raise ValueError("`return_text` is mutually exclusive with `return_tensors`")
+            return_type = ReturnType.NEW_TEXT if return_text else ReturnTypeFULLW_TEXT
         if return_tensors is not None and return_type is None:
             if return_text is not None:
                 raise ValueError("`return_text` is mutually exclusive with `return_tensors`")
@@ -233,25 +233,19 @@ class TextGenerationDollyPipeline(Pipeline):
             - **generated_token_ids** (`torch.Tensor` or `tf.Tensor`, present when `return_tensors=True`) -- The token
               ids of the generated text.
         """
-        return super().__call__(text_inputs, **kwargs)
-
-    def preprocess_helper(instruction: str) -> str:
-        PROMPT_FORMAT = """Below is an instruction that describes a task. Write a response that appropriately completes the request.
-        ### Instruction:
-        {instruction}
-
-        ### Response:
-        """
-        return PROMPT_FORMAT
+        return super().__call__(text_inputs, **kwargs)        
 
     def preprocess(self, prompt_text, prefix="", handle_long_generation=None, **generate_kwargs):
-        inputs = self.tokenizer(
-            self.preprocess_helper(prefix + prompt_text), padding=False, add_special_tokens=False, return_tensors=self.framework
-        )
-        inputs["prompt_text"] = prompt_text
+        prefixed = "".join([prefix, prompt_text])
+        filled_template = "".join(["""Below is an instruction that describes a task. Write a response that appropriately completes the request.\n ### Instruction:\n""", prefixed, """\n\n### Response:\n"""])
+        # inputs = self.tokenizer(
+        #     filled_template, padding=False, add_special_tokens=True, return_tensors=self.framework
+        # )
+        input_ids = self.tokenizer(filled_template, add_special_tokens=True,return_tensors="pt")
+        input_ids["prompt_text"] = prompt_text
 
         if handle_long_generation == "hole":
-            cur_len = inputs["input_ids"].shape[-1]
+            cur_len = input_ids["input_ids"].shape[-1]
             if "max_new_tokens" in generate_kwargs:
                 new_tokens = generate_kwargs["max_new_tokens"]
             else:
@@ -266,11 +260,11 @@ class TextGenerationDollyPipeline(Pipeline):
                         " models max length"
                     )
 
-                inputs["input_ids"] = inputs["input_ids"][:, -keep_length:]
-                if "attention_mask" in inputs:
-                    inputs["attention_mask"] = inputs["attention_mask"][:, -keep_length:]
+                input_ids["input_ids"] = input_ids["input_ids"][:, -keep_length:]
+                if "attention_mask" in input_ids:
+                    input_ids["attention_mask"] = input_ids["attention_mask"][:, -keep_length:]
 
-        return inputs
+        return input_ids
 
     def _forward(self, model_inputs, **generate_kwargs):
         input_ids = model_inputs["input_ids"]
@@ -292,7 +286,7 @@ class TextGenerationDollyPipeline(Pipeline):
             generated_sequence = tf.reshape(generated_sequence, (in_b, out_b // in_b, *generated_sequence.shape[1:]))
         return {"generated_sequence": generated_sequence, "input_ids": input_ids, "prompt_text": prompt_text}
 
-    def postprocess(self, model_outputs, return_type=ReturnType.FULL_TEXT, clean_up_tokenization_spaces=True):
+    def postprocess(self, model_outputs, return_type=ReturnType.NEW_TEXT, clean_up_tokenization_spaces=True):
         generated_sequence = model_outputs["generated_sequence"][0]
         input_ids = model_outputs["input_ids"]
         prompt_text = model_outputs["prompt_text"]
@@ -308,8 +302,6 @@ class TextGenerationDollyPipeline(Pipeline):
                     skip_special_tokens=True,
                     clean_up_tokenization_spaces=clean_up_tokenization_spaces,
                 )
-
-
                 # Remove PADDING prompt of the sequence if XLNet or Transfo-XL model is used
                 if input_ids is None:
                     prompt_length = 0
@@ -321,24 +313,11 @@ class TextGenerationDollyPipeline(Pipeline):
                             clean_up_tokenization_spaces=clean_up_tokenization_spaces,
                         )
                     )
-
+               
                 if return_type == ReturnType.FULL_TEXT:
                     all_text = prompt_text + text[prompt_length:]
                 else:
-                    # all_text = text[prompt_length:]
-                    response_only_sequence = sequence[prompt_length:]
-                    # find where the response begins
-                    response_positions = np.where(response_only_sequence == tokenizer.encode("### Response:")[0])[0]
-                    if len(response_positions) >= 0:
-                        response_pos = response_positions[0]
-                        
-                        # find where the response ends
-                        end_pos = None
-                        end_positions = np.where(response_only_sequence == tokenizer.encode("### End")[0])[0]
-                        if len(end_positions) > 0:
-                            end_pos = end_positions[0]
-                        all_text = tokenizer.decode(response_only_sequence[response_pos + 1 : end_pos]).strip()
+                    all_text = text[prompt_length:].strip()
                 record = {"generated_text": all_text}
             records.append(record)
         return records
-
