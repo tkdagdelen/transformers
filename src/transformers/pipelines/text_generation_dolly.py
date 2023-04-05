@@ -5,8 +5,6 @@ import numpy as np
 from .. import MODEL_FOR_CAUSAL_LM_MAPPING, TF_MODEL_FOR_CAUSAL_LM_MAPPING
 from ..utils import add_end_docstrings, is_tf_available
 from .base import PIPELINE_INIT_ARGS, Pipeline
-from transformers.pipelines import PIPELINE_REGISTRY, text_generation_dolly
-from transformers import AutoModelForCausalLM, TFAutoModelForCausalLM
 
 
 if is_tf_available():
@@ -343,3 +341,14 @@ class TextGenerationDollyPipeline(Pipeline):
                 record = {"generated_text": all_text}
             records.append(record)
         return records
+
+
+
+PIPELINE_REGISTRY.register_pipeline(
+    "text-generation-dolly",
+    pipeline_class=TextGenerationDollyPipeline,
+    pt_model=AutoModelForCausalLM,
+    tf_model=TFAutoModelForCausalLM,
+    default={"pt": ("databricks/dolly-v1-6b","dff64dd")},
+    type="text"
+)
