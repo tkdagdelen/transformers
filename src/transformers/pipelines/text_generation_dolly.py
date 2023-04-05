@@ -246,7 +246,7 @@ class TextGenerationDollyPipeline(Pipeline):
 
     def preprocess(self, prompt_text, prefix="", handle_long_generation=None, **generate_kwargs):
         inputs = self.tokenizer(
-            preprocess_helper(prefix + prompt_text), padding=False, add_special_tokens=False, return_tensors=self.framework
+            self.preprocess_helper(prefix + prompt_text), padding=False, add_special_tokens=False, return_tensors=self.framework
         )
         inputs["prompt_text"] = prompt_text
 
