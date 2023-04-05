@@ -69,6 +69,7 @@ from .table_question_answering import TableQuestionAnsweringArgumentHandler, Tab
 from .text2text_generation import SummarizationPipeline, Text2TextGenerationPipeline, TranslationPipeline
 from .text_classification import TextClassificationPipeline
 from .text_generation import TextGenerationPipeline
+from .text_generation_dolly import TextGenerationDollyPipeline
 from .token_classification import (
     AggregationStrategy,
     NerPipeline,
