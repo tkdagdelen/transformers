@@ -343,14 +343,3 @@ class TextGenerationDollyPipeline(Pipeline):
                 record = {"generated_text": all_text}
             records.append(record)
         return records
-
-
-
-PIPELINE_REGISTRY.register_pipeline(
-    "text-generation-dolly",
-    pipeline_class=TextGenerationDollyPipeline,
-    pt_model=AutoModelForCausalLM,
-    tf_model=TFAutoModelForCausalLM,
-    default={"pt": ("databricks/dolly-v1-6b","dff64dd838c0dbdab333d58018cceee9221d2b71")},
-    type="text"
-)
