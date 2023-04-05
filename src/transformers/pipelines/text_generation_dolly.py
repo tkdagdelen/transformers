@@ -18,7 +18,7 @@ class ReturnType(enum.Enum):
 
 
 @add_end_docstrings(PIPELINE_INIT_ARGS)
-class TextGenerationPipeline(Pipeline):
+class TextGenerationDollyPipeline(Pipeline):
     """
     Language generation pipeline using any `ModelWithLMHead`. This pipeline predicts the words that will follow a
     specified text prompt.
